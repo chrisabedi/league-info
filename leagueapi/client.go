@@ -106,6 +106,12 @@ func (c *Client) GetLastRankedMatchId(gameName string, tagLine string) ([2]strin
 	return [2]string{string(body), puuid}, err
 }
 
+type Envelop struct {
+	Type string
+	Msg  *json.RawMessage
+}
+
+// WIP: This needs work as the Return JSON is massive, need to research json selective marshalling on puuid
 func (c *Client) GetLastRankedMatchInfo(gameName string, tagLine string) {
 
 	values, _ := c.GetLastRankedMatchId(gameName, tagLine)
@@ -113,14 +119,14 @@ func (c *Client) GetLastRankedMatchInfo(gameName string, tagLine string) {
 	matchId := strings.Trim(string(values[0]), "[]\"")
 	uri := fmt.Sprintf("/lol/match/v5/matches/%s?api_key=%s", matchId, c.Token)
 
-	fmt.Println(uri)
-	// resp, err := c.Get(uri)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// defer resp.Body.Close()
-
-	// body, _ := io.ReadAll(resp.Body)
-	// fmt.Println(string(body))
-	// return string(body), err
+	resp, err := c.Get(uri)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
 }
+
+// 	body, _ := io.ReadAll(resp.Body)
+// 	fmt.Println(string(body))
+// 	return string(body), err
+// }
