@@ -2,10 +2,13 @@ package main
 
 import (
 	"fmt"
+	"league-info/leagueapi"
 	"log"
 	"os"
 	"os/signal"
+	"regexp"
 	"syscall"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/joho/godotenv"
@@ -16,10 +19,9 @@ func main() {
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
-	println(os.Getenv("BOT_TOKEN"))
-	Token := os.Getenv("BOT_TOKEN") // Replace with your bot token
+	DiscordToken := os.Getenv("BOT_TOKEN") // Replace with your bot token
 
-	dg, err := discordgo.New("Bot " + Token)
+	dg, err := discordgo.New("Bot " + DiscordToken)
 	if err != nil {
 		fmt.Println("error creating Discord session,", err)
 		return
@@ -52,7 +54,36 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
+	command := commandRegex(m.Content)
+
+	if len(command) == 3 {
+
+		response, _ := GetPUUID(command[1], command[2])
+
+		s.ChannelMessageSend(m.ChannelID, response)
+
+	}
+
 	if m.Content == "!ping" {
+
 		s.ChannelMessageSend(m.ChannelID, "Pong!")
 	}
+}
+
+func commandRegex(content string) []string {
+
+	reg := regexp.MustCompile(`!puuid (\w*)#(\w*)`)
+
+	info := reg.FindStringSubmatch(content)
+
+	return info
+}
+
+// would like to not make a client for every request needs to be simplified
+func GetPUUID(gameName string, tagLine string) (string, error) {
+	ApiToken := os.Getenv("LEAGUE_API_TOKEN")
+
+	client := leagueapi.NewClient("https://americas.api.riotgames.com", 10*time.Second, ApiToken, map[string]string{})
+
+	return client.GetPUUID(gameName, tagLine)
 }

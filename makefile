@@ -1,6 +1,6 @@
 
 
-BINARY_NAME := linfo
+BINARY_NAME := league-info
 
 GO_FILES := main.go 
 
