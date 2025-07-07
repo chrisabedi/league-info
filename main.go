@@ -1,12 +1,14 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"league-info/leagueapi"
 	"log"
 	"os"
 	"os/signal"
 	"regexp"
+	"strings"
 	"syscall"
 	"time"
 
@@ -54,7 +56,8 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-	command := commandRegex(m.Content)
+	var command []string
+	command = PuuidCommandRegex(m.Content)
 
 	if len(command) == 3 {
 
@@ -64,15 +67,57 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	}
 
+	command = LastMatchCommandRegex(m.Content)
+
+	if len(command) == 3 {
+
+		response, _ := GetLastRankedMatch(command[1], command[2])
+
+		s.ChannelMessageSend(m.ChannelID, response)
+
+	}
+
+	command = LastMatchInfoCommandRegex(m.Content)
+
+	if len(command) == 3 {
+
+		response, _ := GetLastRankedMatchInfo(command[1], command[2])
+
+		indentedJsonData, err := json.MarshalIndent(response, "", "	")
+		if err != nil {
+			fmt.Println("Error marshaling indented:", err)
+			s.ChannelMessageSend(m.ChannelID, "fail")
+		}
+
+		s.ChannelMessageSend(m.ChannelID, string(indentedJsonData))
+
+	}
 	if m.Content == "!ping" {
 
 		s.ChannelMessageSend(m.ChannelID, "Pong!")
 	}
 }
 
-func commandRegex(content string) []string {
+func PuuidCommandRegex(content string) []string {
 
 	reg := regexp.MustCompile(`!puuid (\w*)#(\w*)`)
+
+	info := reg.FindStringSubmatch(content)
+
+	return info
+}
+func LastMatchCommandRegex(content string) []string {
+
+	reg := regexp.MustCompile(`!lm (\w*)#(\w*)`)
+
+	info := reg.FindStringSubmatch(content)
+
+	return info
+}
+
+func LastMatchInfoCommandRegex(content string) []string {
+
+	reg := regexp.MustCompile(`!lminfo (\w*)#(\w*)`)
 
 	info := reg.FindStringSubmatch(content)
 
@@ -86,4 +131,29 @@ func GetPUUID(gameName string, tagLine string) (string, error) {
 	client := leagueapi.NewClient("https://americas.api.riotgames.com", 10*time.Second, ApiToken, map[string]string{})
 
 	return client.GetPUUID(gameName, tagLine)
+}
+
+// would like to not make a client for every request needs to be simplified
+func GetLastRankedMatch(gameName string, tagLine string) (string, error) {
+	ApiToken := os.Getenv("LEAGUE_API_TOKEN")
+
+	client := leagueapi.NewClient("https://americas.api.riotgames.com", 10*time.Second, ApiToken, map[string]string{})
+
+	values, err := client.GetLastRankedMatchId(gameName, tagLine)
+	if err != nil {
+		log.Fatal("Error getting last Ranked matchId")
+	}
+
+	return strings.Trim(string(values[0]), "[]\""), err
+}
+
+// would like to not make a client for every request needs to be simplified
+func GetLastRankedMatchInfo(gameName string, tagLine string) (*leagueapi.Participant, error) {
+	ApiToken := os.Getenv("LEAGUE_API_TOKEN")
+
+	client := leagueapi.NewClient("https://americas.api.riotgames.com", 10*time.Second, ApiToken, map[string]string{})
+
+	information, _ := client.GetLastRankedMatchInfo(gameName, tagLine)
+
+	return information, nil
 }

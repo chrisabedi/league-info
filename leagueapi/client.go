@@ -17,6 +17,32 @@ type Client struct {
 	Token      string
 }
 
+type Participant struct {
+	RiotIdGameName    string `json:"riotIdGameName"`
+	ChampionName      string `json:"championName"`
+	Win               bool   `json:"win"`
+	Puuid             string `json:"puuid"`
+	DangerPings       int    `json:"dangerPings"`
+	GetBackPings      int    `json:"getBackPings"`
+	CommandPings      int    `json:"CommandPings"`
+	HoldPings         int    `json:"holdPings"`
+	EnemyMissingPings int    `json:"enemyMissingPings"`
+	EnemyVisionPings  int    `json:"enemyVisionPings"`
+	OnMyWayPings      int    `json:"onMyWayPings"`
+}
+type LastMatchInfo struct {
+	Info Info `json:"info"`
+}
+
+type Info struct {
+	Participants []Participant `json:"participants"`
+}
+type PUUIDResponse struct {
+	Puuid    string `json:puuid`
+	GameName string `json:gameName`
+	TagLine  string `json:tagLine`
+}
+
 func NewClient(baseUrl string, timeout time.Duration, token string, headers map[string]string) *Client {
 	return &Client{
 		BaseUrl: baseUrl,
@@ -67,12 +93,6 @@ func (c *Client) Get(path string) (*http.Response, error) {
 	return c.makeRequest(http.MethodGet, path, nil)
 }
 
-type PUUIDResponse struct {
-	Puuid    string `json:puuid`
-	GameName string `json:gameName`
-	TagLine  string `json:tagLine`
-}
-
 func (c *Client) GetPUUID(gameName string, tagLine string) (string, error) {
 
 	uri := fmt.Sprintf("/riot/account/v1/accounts/by-riot-id/%s/%s?api_key=%s", gameName, tagLine, c.Token)
@@ -82,13 +102,13 @@ func (c *Client) GetPUUID(gameName string, tagLine string) (string, error) {
 		panic(err)
 	}
 
-	var newPuuid PUUIDResponse
-	jerr := json.NewDecoder(resp.Body).Decode(&newPuuid)
+	var newPuuidResp PUUIDResponse
+	jerr := json.NewDecoder(resp.Body).Decode(&newPuuidResp)
 	if jerr != nil {
 		return "fail", jerr
 	}
 
-	return newPuuid.Puuid, err
+	return newPuuidResp.Puuid, err
 }
 
 func (c *Client) GetLastRankedMatchId(gameName string, tagLine string) ([2]string, error) {
@@ -106,13 +126,8 @@ func (c *Client) GetLastRankedMatchId(gameName string, tagLine string) ([2]strin
 	return [2]string{string(body), puuid}, err
 }
 
-type Envelop struct {
-	Type string
-	Msg  *json.RawMessage
-}
-
 // WIP: This needs work as the Return JSON is massive, need to research json selective marshalling on puuid
-func (c *Client) GetLastRankedMatchInfo(gameName string, tagLine string) {
+func (c *Client) GetLastRankedMatchInfo(gameName string, tagLine string) (*Participant, error) {
 
 	values, _ := c.GetLastRankedMatchId(gameName, tagLine)
 
@@ -124,9 +139,22 @@ func (c *Client) GetLastRankedMatchInfo(gameName string, tagLine string) {
 		panic(err)
 	}
 	defer resp.Body.Close()
-}
 
-// 	body, _ := io.ReadAll(resp.Body)
-// 	fmt.Println(string(body))
-// 	return string(body), err
-// }
+	jsonData, _ := io.ReadAll(resp.Body)
+	var lastMatchInfo LastMatchInfo
+
+	jerr := json.Unmarshal(jsonData, &lastMatchInfo)
+	if jerr != nil {
+		fmt.Println("Error unmarshalling:", err)
+		return nil, jerr
+	}
+
+	for _, participant := range lastMatchInfo.Info.Participants {
+
+		if participant.RiotIdGameName == gameName {
+			return &participant, nil
+		}
+	}
+
+	return nil, nil
+}
