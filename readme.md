@@ -7,7 +7,7 @@ A user in the channel can send the following command
 
 to output a formatted text blob of the players last matches Ping Count breakdown. Game Name can have any alphanumeral aswell as spaces,
 
-<img src ="./media/example.jpg" height="450px" width="50%"/>
+<img src ="./media/example.png" />
 
 
 ## Set Up
