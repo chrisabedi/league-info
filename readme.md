@@ -1,28 +1,28 @@
-#League-Info Discord Bot
+# League-Info Discord Bot
 
-This is a small discord bot to hit the League of Legends API and return relevant information to the Channel requested
+This is a small discord bot to hit the League of Legends API and return relevant information to the requested channel.
+A user in the channel can send the following command
 
-Currently two commands recognized are
+`!lminfo <GameName>#<tagLine>`
 
-`!ping`
+to output a formatted text blob of the players last matches Ping Count breakdown. Game Name can have any alphanumeral aswell as spaces,
 
-which will return !Pong
-
-and
-
-`!puuid <GameName>#<tagLine>`
-
-which will return the PUUID for the given RiotID and Tagline provided
-
-and is *only* set up to hit the americas region of league of legends api.
+![alt](<./media/example.jpg>)
 
 
-There is heavy set up to get the needed API keys for discord and League of Legends developer api, but once you are able to get a bot token created from discord, Invite the Bot to your server with correct bot permissions, and finally, a developer token from League of Legends, the bot should work to get a summoners PUUID (player unique Identifier) in order to get more sophisticated results like most recent matches and performance information
+## Set Up
 
 
-This is a work in progress and still needs a good amount of work but comes with a league api client and a discord bot interface.
+You'd first need to get a discord bot key and grant bot access to the set up Bot
 
-The ideal state is to get the last matches history for the player GameName / taglines Unique PUUID, but the JSON is large so that is the next step for this particular project
+![alt ](./media/<Screenshot from 2025-07-08 14-41-51.png>)
+you then will be able to generate a url to grant access to the Bot to a server 
 
-If you'd like to make a PR and suggest changes, feel free, I'm doing this as a nice to have discord bot in order to allow my friends easy access to quickly view there most recent matches in discords UI.
+After, You'll need a personal API token from League of legeneds Developer API portal located at: https://developer.riotgames.com/
 
+![alt](./media/<Screenshot from 2025-07-08 14-40-57.png>)
+
+# Start
+
+`make`
+will compile the go and execute the binary on a server that is acting as the bot :)

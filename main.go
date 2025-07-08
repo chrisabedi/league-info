@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"league-info/leagueapi"
 	"log"
@@ -21,7 +20,7 @@ func main() {
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
-	DiscordToken := os.Getenv("BOT_TOKEN") // Replace with your bot token
+	DiscordToken := os.Getenv("BOT_TOKEN")
 
 	dg, err := discordgo.New("Bot " + DiscordToken)
 	if err != nil {
@@ -32,7 +31,6 @@ func main() {
 	// Register the messageCreate func as a callback for MessageCreate events.
 	dg.AddHandler(messageCreate)
 
-	// Open a websocket connection to Discord and begin listening.
 	err = dg.Open()
 	if err != nil {
 		fmt.Println("error opening connection,", err)
@@ -40,16 +38,13 @@ func main() {
 	}
 
 	fmt.Println("Bot is now running. Press CTRL-C to exit.")
-	// Wait here until CTRL-C or other term signal is received.
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 	<-sc
 
-	// Cleanly close down the Discord session.
 	dg.Close()
 }
 
-// This function will be called (due to AddHandler above) every time a new message is created on any channel that the authenticated bot has access to.
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// Ignore all messages created by the bot itself
 	if m.Author.ID == s.State.User.ID {
@@ -83,13 +78,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 		response, _ := GetLastRankedMatchInfo(command[1], command[2])
 
-		indentedJsonData, err := json.MarshalIndent(response, "", "	")
-		if err != nil {
-			fmt.Println("Error marshaling indented:", err)
-			s.ChannelMessageSend(m.ChannelID, "fail")
-		}
-
-		s.ChannelMessageSend(m.ChannelID, string(indentedJsonData))
+		s.ChannelMessageSend(m.ChannelID, response.OutputMarkDown())
 
 	}
 	if m.Content == "!ping" {
@@ -102,29 +91,28 @@ func PuuidCommandRegex(content string) []string {
 
 	reg := regexp.MustCompile(`!puuid (\w*)#(\w*)`)
 
-	info := reg.FindStringSubmatch(content)
+	matches := reg.FindStringSubmatch(content)
 
-	return info
+	return matches
 }
 func LastMatchCommandRegex(content string) []string {
 
 	reg := regexp.MustCompile(`!lm (\w*)#(\w*)`)
 
-	info := reg.FindStringSubmatch(content)
+	matches := reg.FindStringSubmatch(content)
 
-	return info
+	return matches
 }
 
 func LastMatchInfoCommandRegex(content string) []string {
 
-	reg := regexp.MustCompile(`!lminfo (\w*)#(\w*)`)
+	reg := regexp.MustCompile(`!lminfo ([^#]*)#(\w*)`)
 
-	info := reg.FindStringSubmatch(content)
+	matches := reg.FindStringSubmatch(content)
 
-	return info
+	return matches
 }
 
-// would like to not make a client for every request needs to be simplified
 func GetPUUID(gameName string, tagLine string) (string, error) {
 	ApiToken := os.Getenv("LEAGUE_API_TOKEN")
 
@@ -133,7 +121,6 @@ func GetPUUID(gameName string, tagLine string) (string, error) {
 	return client.GetPUUID(gameName, tagLine)
 }
 
-// would like to not make a client for every request needs to be simplified
 func GetLastRankedMatch(gameName string, tagLine string) (string, error) {
 	ApiToken := os.Getenv("LEAGUE_API_TOKEN")
 

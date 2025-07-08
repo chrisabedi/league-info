@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"reflect"
 	"strings"
 	"time"
 )
@@ -30,6 +31,41 @@ type Participant struct {
 	EnemyVisionPings  int    `json:"enemyVisionPings"`
 	OnMyWayPings      int    `json:"onMyWayPings"`
 }
+
+func NewParticipant(riotIdGameName string, championName string, win bool, puuid string, dangerPings int, getBackPings int, commandPings int, holdPings int, enemyMissingPings int, enemyVisionPings int, onMyWayPings int) *Participant {
+	return &Participant{
+		RiotIdGameName:    riotIdGameName,
+		ChampionName:      championName,
+		Win:               win,
+		Puuid:             puuid,
+		DangerPings:       dangerPings,
+		GetBackPings:      getBackPings,
+		CommandPings:      commandPings,
+		HoldPings:         holdPings,
+		EnemyMissingPings: enemyMissingPings,
+		EnemyVisionPings:  enemyVisionPings,
+		OnMyWayPings:      onMyWayPings,
+	}
+}
+
+func (p *Participant) OutputMarkDown() string {
+
+	output := fmt.Sprintf("| %s | value |\n", p.RiotIdGameName)
+
+	v := reflect.ValueOf(*p)
+	t := v.Type()
+
+	for i := 0; i < v.NumField(); i++ {
+		field := t.Field(i)
+		value := v.Field(i).Interface()
+		if field.Name != "Puuid" && field.Name != "RiotIdGameName" {
+			output += fmt.Sprintf("| %s | %v |\n", field.Name, value)
+		}
+	}
+
+	return output
+}
+
 type LastMatchInfo struct {
 	Info Info `json:"info"`
 }
@@ -37,6 +73,7 @@ type LastMatchInfo struct {
 type Info struct {
 	Participants []Participant `json:"participants"`
 }
+
 type PUUIDResponse struct {
 	Puuid    string `json:puuid`
 	GameName string `json:gameName`
@@ -126,7 +163,6 @@ func (c *Client) GetLastRankedMatchId(gameName string, tagLine string) ([2]strin
 	return [2]string{string(body), puuid}, err
 }
 
-// WIP: This needs work as the Return JSON is massive, need to research json selective marshalling on puuid
 func (c *Client) GetLastRankedMatchInfo(gameName string, tagLine string) (*Participant, error) {
 
 	values, _ := c.GetLastRankedMatchId(gameName, tagLine)
