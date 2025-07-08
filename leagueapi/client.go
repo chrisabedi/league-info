@@ -32,22 +32,6 @@ type Participant struct {
 	OnMyWayPings      int    `json:"onMyWayPings"`
 }
 
-func NewParticipant(riotIdGameName string, championName string, win bool, puuid string, dangerPings int, getBackPings int, commandPings int, holdPings int, enemyMissingPings int, enemyVisionPings int, onMyWayPings int) *Participant {
-	return &Participant{
-		RiotIdGameName:    riotIdGameName,
-		ChampionName:      championName,
-		Win:               win,
-		Puuid:             puuid,
-		DangerPings:       dangerPings,
-		GetBackPings:      getBackPings,
-		CommandPings:      commandPings,
-		HoldPings:         holdPings,
-		EnemyMissingPings: enemyMissingPings,
-		EnemyVisionPings:  enemyVisionPings,
-		OnMyWayPings:      onMyWayPings,
-	}
-}
-
 func (p *Participant) OutputMarkDown() string {
 
 	output := fmt.Sprintf("| %s | value |\n", p.RiotIdGameName)

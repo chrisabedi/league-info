@@ -134,7 +134,6 @@ func GetLastRankedMatch(gameName string, tagLine string) (string, error) {
 	return strings.Trim(string(values[0]), "[]\""), err
 }
 
-// would like to not make a client for every request needs to be simplified
 func GetLastRankedMatchInfo(gameName string, tagLine string) (*leagueapi.Participant, error) {
 	ApiToken := os.Getenv("LEAGUE_API_TOKEN")
 
