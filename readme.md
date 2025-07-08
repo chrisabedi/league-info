@@ -7,7 +7,7 @@ A user in the channel can send the following command
 
 to output a formatted text blob of the players last matches Ping Count breakdown. Game Name can have any alphanumeral aswell as spaces,
 
-![alt](./media/example.jpg =300x300)
+![alt](./media/example.jpg height="450px")
 
 
 ## Set Up
@@ -15,12 +15,12 @@ to output a formatted text blob of the players last matches Ping Count breakdown
 
 You'd first need to get a discord bot key and grant bot access to the set up Bot
 
-![alt ](./media/discord.png =300x)
+![alt ](./media/discord.png height="450px")
 you then will be able to generate a url to grant access to the Bot to a server 
 
 After, You'll need a personal API token from League of legeneds Developer API portal located at: https://developer.riotgames.com/
 
-![alt](./media/league.png =300x)
+![alt](./media/league.png height="450px")
 
 # Start
 
