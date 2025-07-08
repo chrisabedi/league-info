@@ -12,7 +12,12 @@ to output a formatted text blob of the players last matches Ping Count breakdown
 
 ## Set Up
 
+### Requirements
+You will need golang and make for this to run
+The version is defined in the go mod files currently go 1.22.2
 
+
+### API Keys
 You'd first need to get a discord bot key and grant bot access to the set up Bot
 
 <img src="./media/discord.png" height="450px"/>
@@ -22,7 +27,19 @@ After, You'll need a personal API token from League of legeneds Developer API po
 
 <img src="./media/league.png" height="450px"/>
 
+
+then populate the BOT_TOKEN
+and LEAGUE_API_TOKEN
+in a .env file in the root of the repo
+
+
+```
+BOT_TOKEN=xxxxxx
+LEAGUE_API_TOKEN=xxxxx
+```
+
+
 # Start
 
-`make`
-will compile the go and execute the binary on a server that is acting as the bot :)
+The `make` command will compile the and run the bot on a designated server :)
+
