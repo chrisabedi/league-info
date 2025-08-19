@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/signal"
 	"regexp"
-	"strings"
 	"syscall"
 	"time"
 
@@ -16,6 +15,7 @@ import (
 )
 
 func main() {
+
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
@@ -51,62 +51,30 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-	var command []string
-	command = PuuidCommandRegex(m.Content)
+	command := LpCommandRegex(m.Content)
 
 	if len(command) == 3 {
 
-		response, _ := GetPUUID(command[1], command[2])
-
-		s.ChannelMessageSend(m.ChannelID, response)
-
-	}
-
-	command = LastMatchCommandRegex(m.Content)
-
-	if len(command) == 3 {
-
-		response, _ := GetLastRankedMatch(command[1], command[2])
-
-		s.ChannelMessageSend(m.ChannelID, response)
+		response, _ := GetRankedTierInfo(command[1], command[2])
+		var output string
+		if response != nil {
+			output = fmt.Sprintf("`%+v\n`", *response)
+		} else {
+			output = ":warning:  usage: `!lp <summoner>#tagLine `\n(only set up for NA1)"
+		}
+		s.ChannelMessageSend(m.ChannelID, output)
 
 	}
 
-	command = LastMatchInfoCommandRegex(m.Content)
-
-	if len(command) == 3 {
-
-		response, _ := GetLastRankedMatchInfo(command[1], command[2])
-
-		s.ChannelMessageSend(m.ChannelID, response.OutputMarkDown())
-
-	}
 	if m.Content == "!ping" {
 
 		s.ChannelMessageSend(m.ChannelID, "Pong!")
 	}
 }
 
-func PuuidCommandRegex(content string) []string {
+func LpCommandRegex(content string) []string {
 
-	reg := regexp.MustCompile(`!puuid (\w*)#(\w*)`)
-
-	matches := reg.FindStringSubmatch(content)
-
-	return matches
-}
-func LastMatchCommandRegex(content string) []string {
-
-	reg := regexp.MustCompile(`!lm (\w*)#(\w*)`)
-
-	matches := reg.FindStringSubmatch(content)
-
-	return matches
-}
-
-func LastMatchInfoCommandRegex(content string) []string {
-
-	reg := regexp.MustCompile(`!lminfo ([^#]*)#(\w*)`)
+	reg := regexp.MustCompile(`!lp ([a-zA-Z0-9 _]{3,16})#([a-zA-Z0-9]{2,5})`)
 
 	matches := reg.FindStringSubmatch(content)
 
@@ -121,25 +89,13 @@ func GetPUUID(gameName string, tagLine string) (string, error) {
 	return client.GetPUUID(gameName, tagLine)
 }
 
-func GetLastRankedMatch(gameName string, tagLine string) (string, error) {
+func GetRankedTierInfo(gameName string, tagLine string) (*leagueapi.LeagueQueue, error) {
 	ApiToken := os.Getenv("LEAGUE_API_TOKEN")
 
-	client := leagueapi.NewClient("https://americas.api.riotgames.com", 10*time.Second, ApiToken, map[string]string{})
+	puuid, _ := GetPUUID(gameName, tagLine)
+	client := leagueapi.NewClient("https://na1.api.riotgames.com", 10*time.Second, ApiToken, map[string]string{})
 
-	values, err := client.GetLastRankedMatchId(gameName, tagLine)
-	if err != nil {
-		log.Fatal("Error getting last Ranked matchId")
-	}
-
-	return strings.Trim(string(values[0]), "[]\""), err
-}
-
-func GetLastRankedMatchInfo(gameName string, tagLine string) (*leagueapi.Participant, error) {
-	ApiToken := os.Getenv("LEAGUE_API_TOKEN")
-
-	client := leagueapi.NewClient("https://americas.api.riotgames.com", 10*time.Second, ApiToken, map[string]string{})
-
-	information, _ := client.GetLastRankedMatchInfo(gameName, tagLine)
+	information, _ := client.GetRankedTierInfo(gameName, tagLine, puuid)
 
 	return information, nil
 }

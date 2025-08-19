@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"reflect"
-	"strings"
 	"time"
 )
 
@@ -18,50 +16,19 @@ type Client struct {
 	Token      string
 }
 
-type Participant struct {
-	RiotIdGameName    string `json:"riotIdGameName"`
-	ChampionName      string `json:"championName"`
-	Win               bool   `json:"win"`
-	Puuid             string `json:"puuid"`
-	DangerPings       int    `json:"dangerPings"`
-	GetBackPings      int    `json:"getBackPings"`
-	CommandPings      int    `json:"CommandPings"`
-	HoldPings         int    `json:"holdPings"`
-	EnemyMissingPings int    `json:"enemyMissingPings"`
-	EnemyVisionPings  int    `json:"enemyVisionPings"`
-	OnMyWayPings      int    `json:"onMyWayPings"`
-}
-
-func (p *Participant) OutputMarkDown() string {
-
-	output := fmt.Sprintf("| %s | value |\n", p.RiotIdGameName)
-
-	v := reflect.ValueOf(*p)
-	t := v.Type()
-
-	for i := 0; i < v.NumField(); i++ {
-		field := t.Field(i)
-		value := v.Field(i).Interface()
-		if field.Name != "Puuid" && field.Name != "RiotIdGameName" {
-			output += fmt.Sprintf("| %s | %v |\n", field.Name, value)
-		}
-	}
-
-	return output
-}
-
-type LastMatchInfo struct {
-	Info Info `json:"info"`
-}
-
-type Info struct {
-	Participants []Participant `json:"participants"`
+type LeagueQueue struct {
+	QueueType    string `json:"queueType"`
+	Tier         string `json:"tier"`
+	Rank         string `json:"rank"`
+	LeaguePoints int    `json:"leaguePoints"`
+	Wins         int    `json:"wins"`
+	Losses       int    `json:"losses"`
 }
 
 type PUUIDResponse struct {
-	Puuid    string `json:puuid`
-	GameName string `json:gameName`
-	TagLine  string `json:tagLine`
+	Puuid    string `json:"puuid"`
+	GameName string `json:"gameName"`
+	TagLine  string `json:"tagLine"`
 }
 
 func NewClient(baseUrl string, timeout time.Duration, token string, headers map[string]string) *Client {
@@ -132,28 +99,9 @@ func (c *Client) GetPUUID(gameName string, tagLine string) (string, error) {
 	return newPuuidResp.Puuid, err
 }
 
-func (c *Client) GetLastRankedMatchId(gameName string, tagLine string) ([2]string, error) {
+func (c *Client) GetRankedTierInfo(gameName string, tagLine string, puuid string) (*LeagueQueue, error) {
 
-	puuid, _ := c.GetPUUID(gameName, tagLine)
-
-	uri := fmt.Sprintf("/lol/match/v5/matches/by-puuid/%s/ids?start=0&count=1&api_key=%s", puuid, c.Token)
-	resp, err := c.Get(uri)
-	if err != nil {
-		panic(err)
-	}
-	defer resp.Body.Close()
-
-	body, _ := io.ReadAll(resp.Body)
-	return [2]string{string(body), puuid}, err
-}
-
-func (c *Client) GetLastRankedMatchInfo(gameName string, tagLine string) (*Participant, error) {
-
-	values, _ := c.GetLastRankedMatchId(gameName, tagLine)
-
-	matchId := strings.Trim(string(values[0]), "[]\"")
-	uri := fmt.Sprintf("/lol/match/v5/matches/%s?api_key=%s", matchId, c.Token)
-
+	uri := fmt.Sprintf("/lol/league/v4/entries/by-puuid/%s?api_key=%s", puuid, c.Token)
 	resp, err := c.Get(uri)
 	if err != nil {
 		panic(err)
@@ -161,18 +109,17 @@ func (c *Client) GetLastRankedMatchInfo(gameName string, tagLine string) (*Parti
 	defer resp.Body.Close()
 
 	jsonData, _ := io.ReadAll(resp.Body)
-	var lastMatchInfo LastMatchInfo
+	var leagueQueues []LeagueQueue
 
-	jerr := json.Unmarshal(jsonData, &lastMatchInfo)
+	jerr := json.Unmarshal(jsonData, &leagueQueues)
 	if jerr != nil {
 		fmt.Println("Error unmarshalling:", err)
 		return nil, jerr
 	}
+	for _, leagueQueue := range leagueQueues {
 
-	for _, participant := range lastMatchInfo.Info.Participants {
-
-		if participant.RiotIdGameName == gameName {
-			return &participant, nil
+		if leagueQueue.QueueType == "RANKED_SOLO_5x5" {
+			return &leagueQueue, nil
 		}
 	}
 
